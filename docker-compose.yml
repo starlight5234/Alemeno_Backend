@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: alemeno-prod-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.dev
+    environment:
+      - POSTGRES_USER=intern
+      - POSTGRES_PASSWORD=12345
+      - POSTGRES_DB=alemeno
+
+  web:
+    build: .
+    container_name: alemeno-prod
+    command: ["./wait-for-it.sh", "db:5432", "--", "sh", "thine.sh"]
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.dev
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
