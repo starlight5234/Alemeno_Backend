@@ -8,6 +8,7 @@ from django.http import JsonResponse
 
 from .serializers import CustomerSerializer
 from .models import Customer
+from .helper import CheckLoanEligibility
 
 # Create your views here.
 def api_home(request):
@@ -46,3 +47,29 @@ class RegisterCustomer(APIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CheckEligibility(APIView):
+    def post(self, request):
+        data = request.data
+        customer_id  = data['customer_id']
+
+        if Customer.objects.filter(pk=customer_id).exists():
+            customer = Customer.objects.get(pk=customer_id)
+            interest_rate  = data['interest_rate']
+            loan_amount  = data['loan_amount']
+            tenure  = data['tenure']
+            approval, interest = CheckLoanEligibility(customer_id, interest_rate)
+
+            response_data = {
+                "customer_id": customer_id,
+                "loan_amount": loan_amount,
+                "interest_rate": interest_rate,
+                "approval": approval,
+                "corrected_interest_rate": interest,
+                "tenure": tenure
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
