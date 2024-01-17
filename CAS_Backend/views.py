@@ -122,3 +122,30 @@ class CreateLoan(APIView):
         else:
             return Response({"message": "Customer not found"},status=status.HTTP_404_NOT_FOUND)
 
+class ViewLoan(APIView):
+    def get(self, request, loan_id):
+        try:
+            loan = Loan.objects.get(pk=loan_id)
+        except Loan.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = LoanSerializerView(loan)
+        serializer.data['customer'].pop('monthly_salary')
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ViewLoanCust(APIView):
+    def get(self, request, customer_id):
+        try:
+            customer = Customer.objects.get(customer_id = customer_id)
+            loans = Loan.objects.filter(customer = customer)
+
+            response = []
+
+            for loan in loans:
+                entry = LoanSerializerView(loan).data
+                entry["customer"].pop('monthly_salary')
+                response.append(entry)
+
+            return Response(response, status=status.HTTP_200_OK)
+        except Customer.DoesNotExist:
+            return Response({'message': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)

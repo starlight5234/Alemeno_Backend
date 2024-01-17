@@ -6,4 +6,6 @@ urlpatterns = [
     path('register/', RegisterCustomer.as_view(), name='RegisterCustomer'),
     path('check-eligibility/', CheckEligibility.as_view(), name='check_eligibility'),
     path('create-loan/', CreateLoan.as_view(), name='create_loan'),
+    path('view-loan/<loan_id>/', ViewLoan.as_view(), name='view_loan'),
+    path('view-loans/<customer_id>/', ViewLoanCust.as_view(), name='view_loans'),
 ]
