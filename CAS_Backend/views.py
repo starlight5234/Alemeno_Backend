@@ -6,9 +6,11 @@ from rest_framework.views import APIView
 from django.core.serializers import serialize
 from django.http import JsonResponse
 
-from .serializers import CustomerSerializer
-from .models import Customer
-from .helper import CheckLoanEligibility
+from .serializers import CustomerSerializer, LoanSerializerView
+from .models import Customer, Loan
+from .helper import CalculateMonthlyInstallment, CheckLoanEligibility
+
+from datetime import date, timedelta
 
 # Create your views here.
 def api_home(request):
@@ -73,3 +75,50 @@ class CheckEligibility(APIView):
         
         else:
             return Response({"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class CreateLoan(APIView):
+    def post(self, request):
+        data = request.data
+        customer_id  = data['customer_id']
+        interest_rate  = data['interest_rate']
+        loan_amount  = data['loan_amount']
+        tenure  = data['tenure']
+        message = "Approved"
+
+
+        if Customer.objects.filter(pk=customer_id).exists():
+            customer = Customer.objects.get(pk=customer_id)
+            approval, corrected_interest = CheckLoanEligibility(customer_id, interest_rate)
+            monthly_installment = 0
+
+            response_data = {
+                "customer_id": customer_id,
+                "loan_amount": loan_amount,
+                "interest_rate": corrected_interest,
+                "approval": approval,
+                "message": message,
+            }
+            
+            if approval == True:
+                monthly_installment = CalculateMonthlyInstallment(loan_amount, interest_rate,tenure)
+
+                response_data["monthly_installment"] = monthly_installment
+
+                new_loan = Loan.objects.create(
+                    customer = customer,
+                    loan_amount=loan_amount,
+                    interest_rate = corrected_interest,
+                    tenure = tenure,
+                    monthly_installment = monthly_installment,
+                    start_date = date.today(),
+                    end_date = date.today() + timedelta(days = 30 * tenure),
+                    repayments_left = tenure
+                )
+
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                response_data["message"] = "Disapproved"
+                return Response(response_data,status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Customer not found"},status=status.HTTP_404_NOT_FOUND)
+

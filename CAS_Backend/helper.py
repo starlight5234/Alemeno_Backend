@@ -104,3 +104,10 @@ def CheckLoanEligibility(customer_id, interest_rate):
     
     print(credit_rating)
     return approval, corrected_interest_rate
+
+def CalculateMonthlyInstallment(principal, interest_rate, tenure):
+  # Calculate the monthly interest rate
+    monthly_interest_rate = interest_rate / 1200
+    monthly_emis = principal * ((( monthly_interest_rate * (1 + monthly_interest_rate)**tenure)) / ((1 + monthly_interest_rate)**tenure - 1))
+    rounded_monthly_emis = round(monthly_emis , 2)
+    return rounded_monthly_emis
